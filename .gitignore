@@ -1,2 +1,2 @@
-cypress/plugins
-cypress/screenshots
+node_modules
+DS.Store
