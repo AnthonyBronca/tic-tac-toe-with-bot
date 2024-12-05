@@ -1,3 +1,8 @@
+
+
+import { AI, Match, Move } from './javascript/ai/index.js'
+
+
 window.addEventListener("DOMContentLoaded", () => {
 
     // Globals
@@ -9,6 +14,8 @@ window.addEventListener("DOMContentLoaded", () => {
     let xWinCount = 0;
     let oWinCount = 0;
     let tieCount = 0;
+    let currMatch = new Match();
+    let bot = new AI()
 
 
     let board = [
@@ -33,11 +40,11 @@ window.addEventListener("DOMContentLoaded", () => {
     // functions
 
     const setLeaderBoardOnLoad = () => {
-        if(sessionStorage.getItem("leaderboard")){
+        if (sessionStorage.getItem("leaderboard")) {
             let leaderBoard = sessionStorage.getItem("leaderboard");
             // set scores
             const leaderBoardArr = leaderBoard.split("-");
-            const [x,o,t] = leaderBoardArr;
+            const [x, o, t] = leaderBoardArr;
             xWins.innerText = `X Wins: ${x[1]}`;
             oWins.innerText = `O Wins: ${o[1]}`;
             ties.innerText = `Ties: ${t[1]}`;
@@ -92,6 +99,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     const getBoardItem = (i) => {
+
         if (i === 0) return board[0][0];
         if (i === 1) return board[0][1];
         if (i === 2) return board[0][2];
@@ -105,6 +113,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
     const checkWinCondition = (board) => {
+
 
 
         // check rows
@@ -136,7 +145,7 @@ window.addEventListener("DOMContentLoaded", () => {
         if (board[0][2] === currentTurn && board[1][1] === currentTurn && board[2][0] === currentTurn) {
             return true;
         }
-        if(insertCount === 9){
+        if (insertCount === 9) {
             hasTie = true;
             return false;
         }
@@ -148,20 +157,58 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     const changeTurn = () => {
-        const gameStatus = document.getElementById("game-status");
+        // commented out because this is replaced by AI now
+        // const gameStatus = document.getElementById("game-status");
         if (currentTurn === 1) {
-            gameStatus.innerText = "O to Move";
+            // gameStatus.innerText = "O to Move";
             currentTurn = 2;
-        } else {
-            gameStatus.innerText = "X to Move";
+        }
+
+        else {
+            // gameStatus.innerText = "X to Move";
             currentTurn = 1;
         }
     }
 
 
+    const aiMakeMove = () => {
+        if (currentTurn === 2) {
+            bot.analyzeMove(currentTurn, board);
+            const move = bot.makeMove();
+            const [x, y] = move;
+            const queryLocations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8]
+            ];
+            const qLocation = queryLocations[x][y];
+
+            const aiQuery = document.getElementsByClassName("square")[qLocation];
+
+            // insert an O
+            const newSpan = document.createElement("span");
+            newSpan.id = "game-status";
+            newSpan.innerText = "O";
+            aiQuery.appendChild(newSpan);
+        } else {
+            return;
+        }
+        // const newSpan = document.createElement("span");
+        // newSpan.id = "game-status";
+        // if (currentTurn === 2) {
+        //     newSpan.innerText = "O";
+        // }
+        // if (currentTurn === 1) {
+        //     newSpan.innerText = "X";
+        // }
+        // const didWin = insertIntoBoard(i);
+        // square.appendChild(newSpan);
+    }
+
+
     // Event Listeners
 
-    resetBtn.addEventListener("click", ()=> {
+    resetBtn.addEventListener("click", () => {
         // reset storage
         sessionStorage.setItem("leaderboard", "x0-o0-t0");
         currentTurn = 1;
@@ -181,20 +228,18 @@ window.addEventListener("DOMContentLoaded", () => {
         ];
 
         gameStatus.innerText = "X to Move";
-
-
-
+        currMatch = new Match();
     })
 
     giveUpBtn.addEventListener("click", () => {
-        if(!hasWinner && !hasTie){
+        if (!hasWinner && !hasTie) {
             hasWinner = true;
             const gameStatus = document.getElementById("game-status");
             if (currentTurn === 1) {
                 gameStatus.innerText = "O is the winner!";
                 const oldText = oWins.innerText;
                 const oldTextArr = oldText.split(": ");
-                oldTextArr[1] =  parseInt(oldTextArr[1]) + 1;
+                oldTextArr[1] = parseInt(oldTextArr[1]) + 1;
                 const newText = oldTextArr.join(": ");
                 oWins.innerText = newText;
                 oWinCount++;
@@ -223,7 +268,7 @@ window.addEventListener("DOMContentLoaded", () => {
         hasWinner = false;
 
         // reset and flip the starter turn
-        if (startingTurn === 1){
+        if (startingTurn === 1) {
             startingTurn = 2;
             currentTurn = 2;
         } else {
@@ -246,29 +291,37 @@ window.addEventListener("DOMContentLoaded", () => {
         // reset tie text
         hasTie = false;
         const gameStatus = document.getElementById("game-status");
-        if(startingTurn === 1 ){
+        if (startingTurn === 1) {
             gameStatus.innerText = "X to Move";
         } else {
             gameStatus.innerText = "O to Move";
         }
 
+        currMatch = new Match();
 
     })
+
 
 
 
     for (let i = 0; i < squares.length; i++) {
         const square = squares[i];
 
-
         square.addEventListener("click", () => {
             if (!hasWinner) {
                 if (getBoardItem(i) === null) { // checks if we have a playable square
+
+                    // AI
+                    const currMove = new Move(currentTurn, i, currMatch, board);
+                    currMatch.addMove(currMove, currentTurn);
+                    // bot.analyzeMove(currentTurn, board);
+                    // bot.makeMove();
+
                     const newSpan = document.createElement("span");
                     newSpan.id = "game-status";
-                    if (currentTurn === 2) {
-                        newSpan.innerText = "O";
-                    }
+                    // if (currentTurn === 2) {
+                    //     newSpan.innerText = "O";
+                    // }
                     if (currentTurn === 1) {
                         newSpan.innerText = "X";
                     }
@@ -276,21 +329,19 @@ window.addEventListener("DOMContentLoaded", () => {
                     square.appendChild(newSpan);
                     if (didWin) {
                         hasWinner = true;
-                        if (currentTurn === 2) {
-                            const oldText = oWins.innerText;
-                            const oldTextArr = oldText.split(": ");
-                            oldTextArr[1] = parseInt(oldTextArr[1]) + 1;
-                            const newText = oldTextArr.join(": ");
-                            oWins.innerText = newText;
-                        }
+                        currMatch.addWinner(currentTurn, board, bot);
 
-                        if(currentTurn === 1){
-                                const oldText = xWins.innerText;
-                                const oldTextArr = oldText.split(": ");
-                                oldTextArr[1] = parseInt(oldTextArr[1]) + 1;
-                                const newText = oldTextArr.join(": ");
-                                xWins.innerText = newText;
-                        }
+                        let winSelector;
+                        if (currentTurn === 1) winSelector = xWins
+                        if (currentTurn === 2) winSelector = oWins;
+
+                        const oldText = winSelector.innerText;
+                        const oldTextArr = oldText.split(": ");
+                        oldTextArr[1] = parseInt(oldTextArr[1]) + 1;
+                        const newText = oldTextArr.join(": ");
+                        winSelector.innerText = newText;
+
+
                         const gameStatus = document.getElementById("game-status");
                         if (currentTurn === 2) {
                             gameStatus.innerText = "O is the winner!";
@@ -304,7 +355,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
                     } else {
-                        if(hasTie){
+                        if (hasTie) {
                             tieCount++;
                             const gameStatus = document.getElementById("game-status");
                             gameStatus.innerText = "There was a tie!!"
@@ -315,8 +366,9 @@ window.addEventListener("DOMContentLoaded", () => {
                             ties.innerText = newText;
                             hasWinner = true;
                             sessionStorage.setItem("leaderboard", `x${xWinCount}-o${oWinCount}-t${tieCount}`);
-                        } else{
+                        } else {
                             changeTurn();
+                            aiMakeMove();
                         }
                     }
                 }
