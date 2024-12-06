@@ -150,31 +150,31 @@ window.addEventListener("DOMContentLoaded", () => {
             return false;
         }
 
-
-        // check if there are any ties
         return false;
 
     }
 
     const changeTurn = () => {
-        // commented out because this is replaced by AI now
-        // const gameStatus = document.getElementById("game-status");
         if (currentTurn === 1) {
-            // gameStatus.innerText = "O to Move";
             currentTurn = 2;
         }
 
         else {
-            // gameStatus.innerText = "X to Move";
             currentTurn = 1;
         }
     }
 
 
     const aiMakeMove = () => {
-        if (currentTurn === 2) {
-            bot.analyzeMove(currentTurn, board);
+        bot.analyzeMove(board);
+        changeTurn();
+        if (currentTurn === 2 && !hasWinner) {
             const move = bot.makeMove();
+
+            if (!move.length){
+                declareWinner(undefined, true)
+            }
+
             const [x, y] = move;
             const queryLocations = [
                 [0, 1, 2],
@@ -190,21 +190,66 @@ window.addEventListener("DOMContentLoaded", () => {
             newSpan.id = "game-status";
             newSpan.innerText = "O";
             aiQuery.appendChild(newSpan);
+            board[x][y] = 2;
+            let win = checkWinCondition(board);
+            if (win) {
+                declareWinner(currentTurn);
+
+
+            } else {
+                changeTurn();
+            }
         } else {
-            return;
+            declareWinner(undefined, true);
         }
-        // const newSpan = document.createElement("span");
-        // newSpan.id = "game-status";
-        // if (currentTurn === 2) {
-        //     newSpan.innerText = "O";
-        // }
-        // if (currentTurn === 1) {
-        //     newSpan.innerText = "X";
-        // }
-        // const didWin = insertIntoBoard(i);
-        // square.appendChild(newSpan);
+
     }
 
+
+    const declareWinner = (player, tie) => {
+        // handle ties
+        console.log(player, tie, "declare Winner")
+        if (!player && tie) {
+            console.log('here?')
+            tieCount++;
+            const gameStatus = document.getElementById("game-status");
+            gameStatus.innerText = "There was a tie!!"
+            const oldText = ties.innerText;
+            const oldTextArr = oldText.split(": ");
+            oldTextArr[1] = parseInt(oldTextArr[1]) + 1;
+            const newText = oldTextArr.join(": ");
+            ties.innerText = newText;
+            hasWinner = true;
+            sessionStorage.setItem("leaderboard", `x${xWinCount}-o${oWinCount}-t${tieCount}`);
+            return;
+        }
+
+        hasWinner = true;
+        currMatch.addWinner(player, board, bot);
+
+        let winSelector;
+        if (currentTurn === 1) winSelector = xWins
+        if (currentTurn === 2) winSelector = oWins;
+
+        const oldText = winSelector.innerText;
+        const oldTextArr = oldText.split(": ");
+        oldTextArr[1] = parseInt(oldTextArr[1]) + 1;
+        const newText = oldTextArr.join(": ");
+        winSelector.innerText = newText;
+
+
+        const gameStatus = document.getElementById("game-status");
+        if (currentTurn === 2) {
+            gameStatus.innerText = "O is the winner!";
+            oWinCount++;
+        } else {
+            xWinCount++;
+            gameStatus.innerText = "X is the winner!";
+        }
+
+        sessionStorage.setItem("leaderboard", `x${xWinCount}-o${oWinCount}-t${tieCount}`);
+
+    }
 
     // Event Listeners
 
@@ -268,14 +313,8 @@ window.addEventListener("DOMContentLoaded", () => {
         hasWinner = false;
 
         // reset and flip the starter turn
-        if (startingTurn === 1) {
-            startingTurn = 2;
-            currentTurn = 2;
-        } else {
-            startingTurn = 1;
-            currentTurn = 1;
-        }
-
+        startingTurn = 1;
+        currentTurn = 1;
 
         // reset the squares to be empty
         for (let i = 1; i < 10; i++) {
@@ -298,6 +337,7 @@ window.addEventListener("DOMContentLoaded", () => {
         }
 
         currMatch = new Match();
+        bot = new AI();
 
     })
 
@@ -308,71 +348,46 @@ window.addEventListener("DOMContentLoaded", () => {
         const square = squares[i];
 
         square.addEventListener("click", () => {
-            if (!hasWinner) {
-                if (getBoardItem(i) === null) { // checks if we have a playable square
 
-                    // AI
+            // check if we have a winner before we do anything
+            if (!hasWinner) {
+                // check if we have spaces to allow for a play
+                if (getBoardItem(i) === null) {
+
+                    // process the move for later usage with AI
                     const currMove = new Move(currentTurn, i, currMatch, board);
                     currMatch.addMove(currMove, currentTurn);
-                    // bot.analyzeMove(currentTurn, board);
-                    // bot.makeMove();
 
+                    // insert piece
                     const newSpan = document.createElement("span");
                     newSpan.id = "game-status";
-                    // if (currentTurn === 2) {
-                    //     newSpan.innerText = "O";
-                    // }
+                    if (currentTurn === 2) {
+                        newSpan.innerText = "O";
+                    }
                     if (currentTurn === 1) {
                         newSpan.innerText = "X";
                     }
+
                     const didWin = insertIntoBoard(i);
                     square.appendChild(newSpan);
+
+                    // check if this was a winning move
                     if (didWin) {
-                        hasWinner = true;
-                        currMatch.addWinner(currentTurn, board, bot);
-
-                        let winSelector;
-                        if (currentTurn === 1) winSelector = xWins
-                        if (currentTurn === 2) winSelector = oWins;
-
-                        const oldText = winSelector.innerText;
-                        const oldTextArr = oldText.split(": ");
-                        oldTextArr[1] = parseInt(oldTextArr[1]) + 1;
-                        const newText = oldTextArr.join(": ");
-                        winSelector.innerText = newText;
-
-
-                        const gameStatus = document.getElementById("game-status");
-                        if (currentTurn === 2) {
-                            gameStatus.innerText = "O is the winner!";
-                            oWinCount++;
-                        } else {
-                            xWinCount++;
-                            gameStatus.innerText = "X is the winner!";
-                        }
-
-                        sessionStorage.setItem("leaderboard", `x${xWinCount}-o${oWinCount}-t${tieCount}`);
-
-
+                        declareWinner(currentTurn);
                     } else {
-                        if (hasTie) {
-                            tieCount++;
-                            const gameStatus = document.getElementById("game-status");
-                            gameStatus.innerText = "There was a tie!!"
-                            const oldText = ties.innerText;
-                            const oldTextArr = oldText.split(": ");
-                            oldTextArr[1] = parseInt(oldTextArr[1]) + 1;
-                            const newText = oldTextArr.join(": ");
-                            ties.innerText = newText;
-                            hasWinner = true;
-                            sessionStorage.setItem("leaderboard", `x${xWinCount}-o${oWinCount}-t${tieCount}`);
-                        } else {
-                            changeTurn();
-                            aiMakeMove();
-                        }
+                        // next turn game logic
+                        aiMakeMove();
+
                     }
-                }
+                } else {
+                    // check if tie
+                    declareWinner(undefined, true);
+                    }
+                } else{
+                declareWinner(undefined, true);
+
             }
+
         });
 
     }

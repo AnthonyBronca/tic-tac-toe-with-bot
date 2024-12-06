@@ -36,17 +36,6 @@ class AI {
     }
 
 
-    /*
-
-        let board = [
-        [null, null, null],
-        [null, null, null],
-        [null, null, null],
-    ]
-
-    */
-
-
     makeMove() {
         const possibleRoutes = [
             [[0, 0], [0, 1], [0, 2]], // Top Row - 0
@@ -65,25 +54,27 @@ class AI {
 
         // if we are in defense mode, get the direction we care about
         if (this.mode === "defense") {
-            let posibilities = [];
+            let possibilities = [];
             for (let option of possibleRoutes[this.decisions.defense.index]) {
                 let [x, y] = option;
                 if (this.board[x][y] === null) {
-                    posibilities.push([x, y])
+                    possibilities.push([x, y])
                 }
             }
-            return this.getRandomItem(posibilities);
+
+            return this.getRandomItem(possibilities);
         }
         // if we are in attack mode, get the directions we care about
         if (this.mode === "attack") {
-            let posibilities = [];
+            let possibilities = [];
             for (let option of possibleRoutes[this.decisions.attack.index]) {
                 let [x, y] = option;
                 if (this.board[x][y] === null) {
-                    posibilities.push([x, y])
+                    possibilities.push([x, y])
                 }
             }
-            return this.getRandomItem(posibilities);
+
+            return this.getRandomItem(possibilities);
         }
         // if we are in neutral mode, get a random open space
         if (this.mode === "neutral") {
@@ -95,32 +86,33 @@ class AI {
                     }
                 }
             }
+            if(!possibleSelections.length) return possibleSelections;
             return this.getRandomItem(possibleSelections);
 
         }
 
-
     }
 
-    analyzeMove(player, board) {
-        this.turnCount++;
+    analyzeMove(board) {
+        this.turnCount+=2;
         this.board = board; // updates the AI's knowledge
-        if (player === 1) {
-            // update the score
-            let decisions = this.scoreCheck();
-            // check how player 1's move affected the score
-            if (this.turnCount > 2) { // starts the game off in neutral
-                if (decisions.tempScore > this.score) {
-                    this.mode = "defense";
-                } else if (decisions.tempScore < this.score) {
-                    this.mode = "attack";
-                } else {
-                    this.mode = "neutral";
-                }
-                this.decisions = decisions;
-            }
+        // update the score
+        let decisions = this.scoreCheck();
 
+        // check how player 1's move affected the score
+        if (this.turnCount > 2) { // starts the game off in neutral
+            if (decisions.tempScore > this.score) {
+                this.mode = "defense";
+            } else if (decisions.tempScore < this.score) {
+                this.mode = "attack";
+            } else {
+                this.mode = "neutral";
+            }
+            this.decisions = decisions;
+        } else{
+            this.score = 50;
         }
+
 
     }
 
@@ -190,9 +182,12 @@ class AI {
         // TRows, MRows, BRows, LCols, MCols, RCols, LDiag, RDiag,
         const bData = [...rowScores, ...colScores, leftDiagonal, rightDiagonal]
 
+
         let tempScore = 50;
-        for (let data of bData) {
-            if (!data.filled) tempScore += data.score;
+        if(this.turnCount > 2){
+            for (let data of bData) {
+                if (!data.filled) tempScore += data.score;
+            }
         }
 
 
@@ -212,6 +207,7 @@ class AI {
                 decisions.attack = { score: minAttack, index: i }
             }
         }
+
 
         return decisions;
 
@@ -245,7 +241,7 @@ class AI {
 }
 
 class Match {
-    constructor(){
+    constructor() {
         this.board = [
             [null, null, null],
             [null, null, null],
@@ -257,7 +253,7 @@ class Match {
         this.moves = [];
     }
 
-    addMove(move, player){
+    addMove(move, player) {
         let moveObj = {
             coord: move.coord,
             player,
@@ -266,13 +262,13 @@ class Match {
         this.board = move.board;
     }
 
-    addWinner(player, board, bot){
+    addWinner(player, board, bot) {
         this.winner = player;
         this.board = board;
 
     }
 
-    getOutCome(){
+    getOutCome() {
         return {
             board: this.board,
             winner: this.winner,
@@ -283,28 +279,28 @@ class Match {
 
 
 class Move {
-    constructor(player, placementLocation){
+    constructor(player, placementLocation) {
         this.player = player;
         this.coord = this.makeCoordinate(placementLocation);
     }
 
-    makeCoordinate(num){
-        if (num === 0) return [0,0];
-        if (num === 1) return [0,1];
-        if (num === 2) return [0,2];
-        if (num === 3) return [1,0];
-        if (num === 4) return [1,1];
-        if (num === 5) return [1,2];
-        if (num === 6) return [2,0];
-        if (num === 7) return [2,1];
-        if (num === 8) return [2,2];
+    makeCoordinate(num) {
+        if (num === 0) return [0, 0];
+        if (num === 1) return [0, 1];
+        if (num === 2) return [0, 2];
+        if (num === 3) return [1, 0];
+        if (num === 4) return [1, 1];
+        if (num === 5) return [1, 2];
+        if (num === 6) return [2, 0];
+        if (num === 7) return [2, 1];
+        if (num === 8) return [2, 2];
     }
 
-    getCoordinate(){
+    getCoordinate() {
         return this.coord;
     }
 
 
 }
 
-export  {AI, Match, Move};
+export { AI, Match, Move };
